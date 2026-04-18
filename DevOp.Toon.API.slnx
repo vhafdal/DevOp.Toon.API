@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DevOp.Toon.API/DevOp.Toon.API.csproj" />
+  </Folder>
+</Solution>
