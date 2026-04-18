@@ -1,6 +1,6 @@
-# DevOp.Toon.API DocMost Page Tree
+# DevOp.Toon.API Legacy Page Tree
 
-Use this tree when creating the external DocMost space manually.
+Legacy DocMost export reference. Do not treat this file as the active publishing workflow; Wiki.js is the source of truth.
 
 1. Home
 2. Getting Started
@@ -11,4 +11,4 @@ Use this tree when creating the external DocMost space manually.
 7. Per-Request Encode Overrides
 8. API Reference
 
-Suggested publishing order matches the numeric Markdown filenames in this folder.
+The numeric Markdown filenames in this folder reflect the older export order.

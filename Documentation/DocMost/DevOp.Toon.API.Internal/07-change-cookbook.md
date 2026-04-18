@@ -12,7 +12,7 @@ Start with:
 Then verify:
 
 - package README examples
-- DocMost pages
+- live Wiki.js pages when public documentation is affected
 - local API behavior
 
 ## Change formatter ordering or default formatter behavior
