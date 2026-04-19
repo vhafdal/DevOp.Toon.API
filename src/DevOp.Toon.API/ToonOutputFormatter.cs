@@ -100,8 +100,11 @@ public sealed class ToonOutputFormatter : TextOutputFormatter
         Encoding selectedEncoding)
     {
         var encodeOptions = ResolveEncodeOptions(context.HttpContext);
-        var toon = ToonEncoder.Encode(context.Object!, encodeOptions);
-        await context.HttpContext.Response.WriteAsync(toon, selectedEncoding, context.HttpContext.RequestAborted);
+        await ToonEncoder.EncodeToStreamAsync(
+            context.Object!,
+            context.HttpContext.Response.Body,
+            encodeOptions,
+            context.HttpContext.RequestAborted).ConfigureAwait(false);
     }
 
     private static bool IsToonMediaType(StringSegment mediaType)
