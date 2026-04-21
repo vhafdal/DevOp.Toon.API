@@ -26,13 +26,13 @@
     <Title>DevOp Toon API</Title>
     <Copyright>Þorvaldur Hafdal(DevOp)</Copyright>
     <PackageIcon>Assets/DevOp.Toon.API-128.png</PackageIcon>
-    <PackageReleaseNotes>Stream TOON output directly to the HTTP response body and align the DevOp.Toon dependency with version 0.2.5.</PackageReleaseNotes>
+    <PackageReleaseNotes>Make AddToon() default to the compact columnar encoder profile, preserve simple option overrides, align TOON output formatter negotiation with explicit Accept headers, and register TOON media types for ASP.NET Core response compression.</PackageReleaseNotes>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="DevOp.Toon" Version="0.2.5" Condition="'$(Configuration)' != 'Debug' or '$(ToonProjectPath)' == ''" />
+    <PackageReference Include="DevOp.Toon" Version="0.2.6" Condition="'$(Configuration)' != 'Debug' or '$(ToonProjectPath)' == ''" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(ToonProjectPath)' != ''">

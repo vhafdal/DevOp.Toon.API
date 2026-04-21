@@ -5,6 +5,7 @@ Repository for the `DevOp.Toon.API` package, an ASP.NET Core MVC transport-layer
 ## Repository Layout
 
 - `src/DevOp.Toon.API/` contains the package source and the NuGet package README
+- `tests/DevOp.Toon.API.Tests/` contains formatter registration and behavior tests
 - `Documentation/` contains repository-level implementation and behavior notes
 
 ## Package

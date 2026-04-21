@@ -49,17 +49,14 @@ public sealed class ToonOutputFormatter : TextOutputFormatter
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (!base.CanWriteResult(context))
+        var objectType = context.ObjectType ?? context.Object?.GetType();
+        if (!CanWriteType(objectType))
         {
             return false;
         }
 
-        if (IsToonMediaType(context.HttpContext.Response.ContentType))
-        {
-            return true;
-        }
-
-        if (IsToonMediaType(context.HttpContext.Request.ContentType))
+        if (IsToonMediaType(context.ContentType) ||
+            IsToonMediaType(context.HttpContext.Response.ContentType))
         {
             return true;
         }
@@ -69,29 +66,12 @@ public sealed class ToonOutputFormatter : TextOutputFormatter
 
         if (acceptHeaders != null && acceptHeaders.Count > 0)
         {
-            return base.CanWriteResult(context);
+            return acceptHeaders.Any(header =>
+                IsToonMediaType(header.MediaType) ||
+                header.MediaType.Equals("*/*", StringComparison.OrdinalIgnoreCase));
         }
 
-        // 2. No Accept header → fallback to request Content-Type
-        if (!string.IsNullOrWhiteSpace(requestContentType))
-        {
-            if (requestContentType.StartsWith(MediaTypeText, StringComparison.OrdinalIgnoreCase) ||
-                requestContentType.StartsWith(MediaTypeApplication, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-        if (acceptHeaders is null)
-        {
-            return true;
-        }
-
-        if (acceptHeaders.Any(header => IsToonMediaType(header.MediaType)))
-        {
-            return true;
-        }
-
-        return acceptHeaders.Any(header => header.MediaType == "*/*");
+        return string.IsNullOrWhiteSpace(requestContentType) || IsToonMediaType(requestContentType);
     }
 
     /// <inheritdoc />

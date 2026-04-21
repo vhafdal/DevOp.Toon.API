@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/DevOp.Toon.API/DevOp.Toon.API.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DevOp.Toon.API.Tests/DevOp.Toon.API.Tests.csproj" />
+  </Folder>
 </Solution>

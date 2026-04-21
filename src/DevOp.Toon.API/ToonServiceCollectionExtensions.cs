@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using DevOp.Toon.Core;
 using DevOp.Toon;
@@ -10,16 +11,26 @@ namespace DevOp.Toon.API;
 /// </summary>
 public static class ToonServiceCollectionExtensions
 {
+    private static readonly string[] ToonCompressionMimeTypes =
+    [
+        ToonMediaTypes.Application,
+        ToonMediaTypes.Text
+    ];
+
     /// <summary>
     /// Registers TOON services and MVC formatters.
     /// </summary>
     public static IServiceCollection AddToon(this IServiceCollection services, Action<ToonServiceOptions> configure, bool useAsDefaultFormatter = false)
     {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configure);
+
         global::DevOp.Toon.ToonServiceCollectionExtensions.AddToon(services, options =>
         {
             ApplyTransportDefaults(options);
             configure(options);
         });
+        services.Configure<ResponseCompressionOptions>(AddToonCompressionMimeTypes);
         services.Configure<MvcOptions>(options => AddToonFormatters(options, useAsDefaultFormatter));
         return services;
     }
@@ -37,6 +48,8 @@ public static class ToonServiceCollectionExtensions
     /// </summary>
     public static IMvcBuilder AddToon(this IMvcBuilder builder, Action<ToonServiceOptions> configure, bool useAsDefaultFormatter = false)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         builder.Services.AddToon(configure, useAsDefaultFormatter);
         return builder;
     }
@@ -54,6 +67,8 @@ public static class ToonServiceCollectionExtensions
     /// </summary>
     public static IMvcCoreBuilder AddToon(this IMvcCoreBuilder builder, Action<ToonServiceOptions> configure, bool useAsDefaultFormatter = false)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         builder.Services.AddToon(configure, useAsDefaultFormatter);
         return builder;
     }
@@ -69,9 +84,22 @@ public static class ToonServiceCollectionExtensions
     private static void ApplyTransportDefaults(ToonServiceOptions options)
     {
         options.Indent = 1;
-        options.Delimiter = ToonDelimiter.COMMA;
-        options.KeyFolding = ToonKeyFolding.Off;
-        options.ObjectArrayLayout = ToonObjectArrayLayout.Columnar;
+
+        var encode = options.Encode;
+        encode.IgnoreNullOrEmpty = true;
+        encode.Delimiter = ToonDelimiter.COMMA;
+        encode.Indent = 1;
+        encode.ExcludeEmptyArrays = true;
+        encode.KeyFolding = ToonKeyFolding.Off;
+        encode.ObjectArrayLayout = ToonObjectArrayLayout.Columnar;
+    }
+
+    private static void AddToonCompressionMimeTypes(ResponseCompressionOptions options)
+    {
+        var mimeTypes = options.MimeTypes ?? ResponseCompressionDefaults.MimeTypes;
+        options.MimeTypes = mimeTypes
+            .Concat(ToonCompressionMimeTypes)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
     }
 
     private static void AddToonFormatters(MvcOptions options, bool useAsDefaultFormatter)

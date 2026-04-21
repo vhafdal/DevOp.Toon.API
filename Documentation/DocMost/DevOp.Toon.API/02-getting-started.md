@@ -17,8 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddControllers()
-    .AddToon(useAsDefaultFormatter: false);
+    .AddToon();
 ```
+
+The parameterless registration uses compact columnar response encoding by default.
 
 ## 3. Return TOON from an API
 
@@ -28,7 +30,20 @@ If the request asks for `application/toon` or `text/toon`, the MVC formatter pip
 
 Controllers can also receive TOON payloads through normal model binding when the request content type is TOON.
 
-## 5. Tune behavior when needed
+## 5. Enable compression when needed
+
+`AddToon()` registers TOON media types with ASP.NET Core response compression options. Enable the middleware in the application when compressed responses should be sent:
+
+```csharp
+builder.Services.AddResponseCompression();
+
+var app = builder.Build();
+
+app.UseResponseCompression();
+app.MapControllers();
+```
+
+## 6. Tune behavior when needed
 
 You can provide application-wide defaults through the `AddToon(...)` configure callback:
 
@@ -37,8 +52,8 @@ builder.Services
     .AddControllers()
     .AddToon(options =>
     {
-        options.Indent = 1;
-        options.ObjectArrayLayout = ToonObjectArrayLayout.Columnar;
+        options.Encode.Indent = 2;
+        options.Encode.IgnoreNullOrEmpty = false;
     });
 ```
 

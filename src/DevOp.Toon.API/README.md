@@ -14,6 +14,7 @@ dotnet add package DevOp.Toon.API
 - Supports `text/toon` and `application/toon`
 - Reuses `DevOp.Toon` for TOON encoding, decoding, and options
 - Allows per-request response encode overrides through `X-Toon-Option-*` headers
+- Adds TOON media types to ASP.NET Core response compression options
 
 ## Basic Usage
 
@@ -24,7 +25,41 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddControllers()
-    .AddToon(useAsDefaultFormatter: false);
+    .AddToon();
+```
+
+`AddToon()` uses the compact columnar encoder profile by default:
+
+- ignores null or empty values
+- excludes empty arrays
+- uses comma delimiters
+- uses one-space indentation
+- keeps key folding off
+- writes object arrays in columnar layout
+
+Override only the values your API needs to change:
+
+```csharp
+builder.Services
+    .AddControllers()
+    .AddToon(options =>
+    {
+        options.Encode.Indent = 2;
+        options.Encode.IgnoreNullOrEmpty = false;
+    });
+```
+
+## Response Compression
+
+`AddToon()` adds `application/toon` and `text/toon` to ASP.NET Core response compression options. The application still controls whether response compression middleware is enabled:
+
+```csharp
+builder.Services.AddResponseCompression();
+
+var app = builder.Build();
+
+app.UseResponseCompression();
+app.MapControllers();
 ```
 
 ## Per-Request Response Encode Overrides

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,15 @@ namespace DevOp.Toon.API;
 /// </summary>
 public sealed class ToonInputFormatter : TextInputFormatter
 {
+    private static readonly MethodInfo DecodeGenericMethod = typeof(ToonDecoder)
+        .GetMethods()
+        .Single(method =>
+            method.Name == nameof(ToonDecoder.Decode)
+            && method.IsGenericMethodDefinition
+            && method.GetParameters().Length == 2
+            && method.GetParameters()[0].ParameterType == typeof(string)
+            && method.GetParameters()[1].ParameterType == typeof(ToonDecodeOptions));
+
     /// <summary>
     /// The <c>text/toon</c> media type.
     /// </summary>
@@ -58,6 +68,11 @@ public sealed class ToonInputFormatter : TextInputFormatter
 
             return await InputFormatterResult.SuccessAsync(result);
         }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            context.ModelState.TryAddModelError(context.ModelName, ex.InnerException, context.Metadata);
+            return await InputFormatterResult.FailureAsync();
+        }
         catch (Exception ex)
         {
             context.ModelState.TryAddModelError(context.ModelName, ex, context.Metadata);
@@ -74,16 +89,7 @@ public sealed class ToonInputFormatter : TextInputFormatter
 
     private static object? DecodeTyped(string text, Type modelType, ToonDecodeOptions options)
     {
-        var method = typeof(ToonDecoder)
-            .GetMethods()
-            .Single(method =>
-                method.Name == nameof(ToonDecoder.Decode)
-                && method.IsGenericMethodDefinition
-                && method.GetParameters().Length == 2
-                && method.GetParameters()[0].ParameterType == typeof(string)
-                && method.GetParameters()[1].ParameterType == typeof(ToonDecodeOptions));
-
-        var genericMethod = method.MakeGenericMethod(modelType);
+        var genericMethod = DecodeGenericMethod.MakeGenericMethod(modelType);
         return genericMethod.Invoke(null, new object?[] { text, options });
     }
 }

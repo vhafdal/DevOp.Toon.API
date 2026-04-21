@@ -12,15 +12,15 @@ builder.Services
 
 ## Registration with explicit options
 
+`AddToon()` already starts from the compact columnar encoder profile. Configure only the values that should differ from the defaults:
+
 ```csharp
 builder.Services
     .AddControllers()
     .AddToon(options =>
     {
-        options.Indent = 1;
-        options.Delimiter = ToonDelimiter.COMMA;
-        options.KeyFolding = ToonKeyFolding.Off;
-        options.ObjectArrayLayout = ToonObjectArrayLayout.Columnar;
+        options.Encode.Indent = 2;
+        options.Encode.IgnoreNullOrEmpty = false;
     }, useAsDefaultFormatter: false);
 ```
 
@@ -28,12 +28,14 @@ builder.Services
 
 Before your callback runs, the formatter registration applies these defaults:
 
-- `Indent = 1`
-- `Delimiter = COMMA`
-- `KeyFolding = Off`
-- `ObjectArrayLayout = Columnar`
+- `Encode.IgnoreNullOrEmpty = true`
+- `Encode.Delimiter = COMMA`
+- `Encode.Indent = 1`
+- `Encode.ExcludeEmptyArrays = true`
+- `Encode.KeyFolding = Off`
+- `Encode.ObjectArrayLayout = Columnar`
 
-This happens so the API transport profile starts from a predictable TOON formatter baseline.
+This happens so the API transport profile starts from a compact, predictable TOON formatter baseline.
 
 ## Default formatter ordering
 
@@ -48,5 +50,6 @@ This happens so the API transport profile starts from a predictable TOON formatt
 - `IToonService`
 - `ToonInputFormatter`
 - `ToonOutputFormatter`
+- TOON media types in `ResponseCompressionOptions.MimeTypes`
 
 The package avoids duplicate formatter registration when the formatters are already present in MVC options.

@@ -17,14 +17,17 @@ All of them route back to the same service-registration logic.
 1. calls the base `DevOp.Toon` DI registration
 2. applies transport defaults
 3. applies the caller's configuration callback
-4. configures MVC options to add input and output formatters
+4. adds TOON media types to response compression options
+5. configures MVC options to add input and output formatters
 
 ## Transport defaults applied here
 
-- `Indent = 1`
-- `Delimiter = COMMA`
-- `KeyFolding = Off`
-- `ObjectArrayLayout = Columnar`
+- `Encode.IgnoreNullOrEmpty = true`
+- `Encode.Delimiter = COMMA`
+- `Encode.Indent = 1`
+- `Encode.ExcludeEmptyArrays = true`
+- `Encode.KeyFolding = Off`
+- `Encode.ObjectArrayLayout = Columnar`
 
 These defaults are set in `ApplyTransportDefaults(...)`.
 
