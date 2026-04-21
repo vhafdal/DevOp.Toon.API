@@ -1,6 +1,7 @@
 using DevOp.Toon;
 using DevOp.Toon.API;
 using DevOp.Toon.Core;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,6 +71,40 @@ public sealed class ToonServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<ResponseCompressionOptions>>().Value;
 
+        Assert.Contains(ToonMediaTypes.Application, options.MimeTypes);
+        Assert.Contains(ToonMediaTypes.Text, options.MimeTypes);
+    }
+
+    [Fact]
+    public void AddToon_PreservesDefaultResponseCompressionMimeTypes()
+    {
+        var services = new ServiceCollection();
+
+        services.AddControllers().AddToon();
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<ResponseCompressionOptions>>().Value;
+
+        Assert.Contains("application/json", options.MimeTypes);
+        Assert.Contains(ToonMediaTypes.Application, options.MimeTypes);
+        Assert.Contains(ToonMediaTypes.Text, options.MimeTypes);
+    }
+
+    [Fact]
+    public void AddToon_PreservesResponseCompressionMimeTypesConfiguredAfterToon()
+    {
+        var services = new ServiceCollection();
+
+        services.AddControllers().AddToon();
+        services.AddResponseCompression(options =>
+        {
+            options.MimeTypes = ["application/json"];
+        });
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<ResponseCompressionOptions>>().Value;
+
+        Assert.Contains("application/json", options.MimeTypes);
         Assert.Contains(ToonMediaTypes.Application, options.MimeTypes);
         Assert.Contains(ToonMediaTypes.Text, options.MimeTypes);
     }

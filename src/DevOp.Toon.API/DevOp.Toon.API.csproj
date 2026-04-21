@@ -26,7 +26,7 @@
     <Title>DevOp Toon API</Title>
     <Copyright>Þorvaldur Hafdal(DevOp)</Copyright>
     <PackageIcon>Assets/DevOp.Toon.API-128.png</PackageIcon>
-    <PackageReleaseNotes>Make AddToon() default to the compact columnar encoder profile, preserve simple option overrides, align TOON output formatter negotiation with explicit Accept headers, and register TOON media types for ASP.NET Core response compression.</PackageReleaseNotes>
+    <PackageReleaseNotes>Make AddToon() default to the compact columnar encoder profile, preserve simple option overrides, align TOON output formatter negotiation with explicit Accept headers, and register TOON media types for ASP.NET Core response compression without replacing existing compression MIME types.</PackageReleaseNotes>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 

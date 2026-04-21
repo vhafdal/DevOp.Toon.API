@@ -30,7 +30,7 @@ public static class ToonServiceCollectionExtensions
             ApplyTransportDefaults(options);
             configure(options);
         });
-        services.Configure<ResponseCompressionOptions>(AddToonCompressionMimeTypes);
+        services.PostConfigure<ResponseCompressionOptions>(AddToonCompressionMimeTypes);
         services.Configure<MvcOptions>(options => AddToonFormatters(options, useAsDefaultFormatter));
         return services;
     }
@@ -96,7 +96,11 @@ public static class ToonServiceCollectionExtensions
 
     private static void AddToonCompressionMimeTypes(ResponseCompressionOptions options)
     {
-        var mimeTypes = options.MimeTypes ?? ResponseCompressionDefaults.MimeTypes;
+        var configuredMimeTypes = options.MimeTypes?.ToArray();
+        var mimeTypes = configuredMimeTypes is { Length: > 0 }
+            ? configuredMimeTypes
+            : ResponseCompressionDefaults.MimeTypes;
+
         options.MimeTypes = mimeTypes
             .Concat(ToonCompressionMimeTypes)
             .Distinct(StringComparer.OrdinalIgnoreCase);
