@@ -9,7 +9,7 @@
     <AssemblyName>DevOp.Toon.API</AssemblyName>
 
     <PackageId>DevOp.Toon.API</PackageId>
-    <Version>0.1.4</Version>
+    <Version>0.1.5</Version>
     <Authors>Þorvaldur Hafdal</Authors>
     <Company>DevOp</Company>
     <Description>ASP.NET Core MVC formatters and service registration extensions for TOON payloads.</Description>
