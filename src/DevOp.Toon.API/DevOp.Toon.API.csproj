@@ -32,7 +32,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="DevOp.Toon" Version="0.2.6" Condition="'$(Configuration)' != 'Debug' or '$(ToonProjectPath)' == ''" />
+    <PackageReference Include="DevOp.Toon" Version="0.2.7" Condition="'$(Configuration)' != 'Debug' or '$(ToonProjectPath)' == ''" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(ToonProjectPath)' != ''">
