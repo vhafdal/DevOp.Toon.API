@@ -23,6 +23,7 @@ Any writable public property on `ToonEncodeOptions` can be overridden per reques
 - `KeyFolding`
 - `FlattenDepth`
 - `ObjectArrayLayout`
+- `ByteArrayFormat`
 - `IgnoreNullOrEmpty`
 - `ExcludeEmptyArrays`
 
@@ -44,9 +45,18 @@ Accept: application/toon
 X-Toon-Option-IgnoreNullOrEmpty: false
 ```
 
+To force numeric byte arrays for one response instead of the default Base64 string representation:
+
+```http
+GET /files/42
+Accept: application/toon
+X-Toon-Option-ByteArrayFormat: NumericArray
+```
+
 ## Behavior
 
 - Overrides apply only to the current HTTP request
 - The formatter clones the configured `ToonEncodeOptions` before applying header values
 - Invalid header names or values are ignored
 - Application-wide defaults registered through `AddToon(...)` are not mutated
+- `ByteArrayFormat` defaults to `Base64String`, matching `DevOp.Toon` runtime behavior for `byte[]`, `List<byte>`, and `IEnumerable<byte>`

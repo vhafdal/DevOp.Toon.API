@@ -114,6 +114,7 @@ public sealed class ToonOutputFormatter : TextOutputFormatter
             KeyFolding = options.KeyFolding,
             FlattenDepth = options.FlattenDepth,
             ObjectArrayLayout = options.ObjectArrayLayout,
+            ByteArrayFormat = options.ByteArrayFormat,
             IgnoreNullOrEmpty = options.IgnoreNullOrEmpty,
             ExcludeEmptyArrays = options.ExcludeEmptyArrays
         };

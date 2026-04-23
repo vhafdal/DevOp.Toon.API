@@ -9,7 +9,7 @@
     <AssemblyName>DevOp.Toon.API</AssemblyName>
 
     <PackageId>DevOp.Toon.API</PackageId>
-    <Version>0.1.7</Version>
+    <Version>0.1.8</Version>
     <Authors>Þorvaldur Hafdal</Authors>
     <Company>DevOp</Company>
     <Description>ASP.NET Core MVC formatters and service registration extensions for TOON payloads.</Description>
@@ -27,19 +27,19 @@
     <Copyright>Þorvaldur Hafdal(DevOp)</Copyright>
     <PackageIcon>Assets/DevOp.Toon.API-128.png</PackageIcon>
     <PackageReleaseNotes>
-      Improves formatter defaults, content negotiation, and response compression integration.
-      - Adds compact columnar encoder profile as the default for AddToon()
-      - Improves per-request encode option override handling to preserve simple values correctly
-      - Fixes TOON output formatter content negotiation to respect explicit Accept headers
-      - Fixes response compression registration to append TOON MIME types without replacing existing types
-      - Updates DevOp.Toon core runtime dependency to 0.2.7
+      Improves DevOp.Toon 0.2.8 integration for encode option forwarding and byte sequence handling.
+      - Adds ByteArrayFormat support to cloned per-request formatter encode options
+      - Improves ASP.NET Core TOON responses so byte[] defaults follow the DevOp.Toon Base64String behavior
+      - Fixes X-Toon-Option-ByteArrayFormat overrides so callers can request NumericArray output per response
+      - Fixes typed TOON request decoding coverage for byte[] payloads encoded as Base64 strings or numeric arrays
+      - Updates DevOp.Toon runtime dependency to 0.2.8
     </PackageReleaseNotes>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="DevOp.Toon" Version="0.2.7" Condition="'$(Configuration)' != 'Debug' or '$(ToonProjectPath)' == ''" />
+    <PackageReference Include="DevOp.Toon" Version="0.2.8" Condition="'$(Configuration)' != 'Debug' or '$(ToonProjectPath)' == ''" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(ToonProjectPath)' != ''">

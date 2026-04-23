@@ -27,6 +27,7 @@ public sealed class ToonServiceCollectionExtensionsTests
         Assert.True(options.ExcludeEmptyArrays);
         Assert.Equal(ToonKeyFolding.Off, options.KeyFolding);
         Assert.Equal(ToonObjectArrayLayout.Columnar, options.ObjectArrayLayout);
+        Assert.Equal(ToonByteArrayFormat.Base64String, options.ByteArrayFormat);
     }
 
     [Fact]

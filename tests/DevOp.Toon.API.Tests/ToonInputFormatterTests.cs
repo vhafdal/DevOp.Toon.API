@@ -1,4 +1,5 @@
 using System.Text;
+using DevOp.Toon;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -37,8 +38,41 @@ public sealed class ToonInputFormatterTests
         Assert.IsNotType<System.Reflection.TargetInvocationException>(error.Exception);
     }
 
+    [Theory]
+    [InlineData("Data: AQID")]
+    [InlineData("Data[3]: 1,2,3")]
+    public async Task ReadRequestBodyAsync_DecodesByteArraysFromSupportedFormats(string payload)
+    {
+        var formatter = new ToonInputFormatter();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = new ServiceCollection().AddToon().BuildServiceProvider()
+        };
+        httpContext.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(payload));
+
+        var modelState = new ModelStateDictionary();
+        var metadata = new EmptyModelMetadataProvider().GetMetadataForType(typeof(ByteModel));
+        var context = new InputFormatterContext(
+            httpContext,
+            modelName: string.Empty,
+            modelState,
+            metadata,
+            (_, encoding) => new StreamReader(httpContext.Request.Body, encoding));
+
+        var result = await formatter.ReadRequestBodyAsync(context, Encoding.UTF8);
+
+        Assert.False(result.HasError);
+        var model = Assert.IsType<ByteModel>(result.Model);
+        Assert.Equal([1, 2, 3], model.Data);
+    }
+
     private sealed class SampleModel
     {
         public int Id { get; set; }
+    }
+
+    private sealed class ByteModel
+    {
+        public byte[] Data { get; set; } = [];
     }
 }

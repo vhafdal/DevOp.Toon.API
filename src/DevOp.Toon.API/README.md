@@ -13,6 +13,7 @@ dotnet add package DevOp.Toon.API
 - Registers TOON MVC formatters with `AddToon(...)`
 - Supports `text/toon` and `application/toon`
 - Reuses `DevOp.Toon` for TOON encoding, decoding, and options
+- Uses `Base64String` byte-sequence encoding by default for `byte[]`, `List<byte>`, and `IEnumerable<byte>`
 - Allows per-request response encode overrides through `X-Toon-Option-*` headers
 - Adds TOON media types to ASP.NET Core response compression options
 
@@ -74,11 +75,20 @@ Accept: application/toon
 X-Toon-Option-IgnoreNullOrEmpty: true
 X-Toon-Option-ExcludeEmptyArrays: true
 X-Toon-Option-ObjectArrayLayout: Columnar
+X-Toon-Option-ByteArrayFormat: NumericArray
 X-Toon-Option-KeyFolding: off
 X-Toon-Option-Delimiter: COMMA
 ```
 
 This overlay is applied only for the current response and does not change the application's registered `ToonServiceOptions`.
+
+`ByteArrayFormat` is useful when a response should keep compact Base64 output by default but allow callers to opt into JSON-like numeric arrays for `byte[]` members:
+
+```http
+GET /files/42
+Accept: application/toon
+X-Toon-Option-ByteArrayFormat: NumericArray
+```
 
 See [Documentation/PerRequestEncodeOptions.md](/home/valdi/Projects/DevOp.Toon.API/Documentation/PerRequestEncodeOptions.md) for details.
 
