@@ -92,6 +92,7 @@ public static class ToonServiceCollectionExtensions
         encode.ExcludeEmptyArrays = true;
         encode.KeyFolding = ToonKeyFolding.Off;
         encode.ObjectArrayLayout = ToonObjectArrayLayout.Columnar;
+        encode.ByteArrayFormat = ToonByteArrayFormat.Base64String;
     }
 
     private static void AddToonCompressionMimeTypes(ResponseCompressionOptions options)
