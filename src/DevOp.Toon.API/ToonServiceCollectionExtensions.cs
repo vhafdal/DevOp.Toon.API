@@ -83,16 +83,7 @@ public static class ToonServiceCollectionExtensions
 
     private static void ApplyTransportDefaults(ToonServiceOptions options)
     {
-        options.Indent = 1;
-
-        var encode = options.Encode;
-        encode.IgnoreNullOrEmpty = true;
-        encode.Delimiter = ToonDelimiter.COMMA;
-        encode.Indent = 1;
-        encode.ExcludeEmptyArrays = true;
-        encode.KeyFolding = ToonKeyFolding.Off;
-        encode.ObjectArrayLayout = ToonObjectArrayLayout.Columnar;
-        encode.ByteArrayFormat = ToonByteArrayFormat.Base64String;
+        options.Indent = 2;
     }
 
     private static void AddToonCompressionMimeTypes(ResponseCompressionOptions options)
@@ -109,6 +100,7 @@ public static class ToonServiceCollectionExtensions
 
     private static void AddToonFormatters(MvcOptions options, bool useAsDefaultFormatter)
     {
+        if (!options.Filters.OfType<ToonVersionValidationFilter>().Any()) options.Filters.Add(new ToonVersionValidationFilter());
         if (options.InputFormatters.OfType<ToonInputFormatter>().Any())
         {
             if (!options.OutputFormatters.OfType<ToonOutputFormatter>().Any())
