@@ -12,7 +12,7 @@ namespace DevOp.Toon.API.Tests;
 public sealed class ToonServiceCollectionExtensionsTests
 {
     [Fact]
-    public void AddToon_UsesCompactColumnarEncodeDefaults()
+    public void AddToon_UsesOfficialV44PreservingEncodeDefaults()
     {
         var services = new ServiceCollection();
 
@@ -21,12 +21,13 @@ public sealed class ToonServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<ToonServiceOptions>().Encode;
 
-        Assert.True(options.IgnoreNullOrEmpty);
+        Assert.False(options.IgnoreNullOrEmpty);
         Assert.Equal(ToonDelimiter.COMMA, options.Delimiter);
-        Assert.Equal(1, options.Indent);
-        Assert.True(options.ExcludeEmptyArrays);
+        Assert.Equal(2, options.Indent);
+        Assert.Equal(ToonProtocolVersion.V4_4, options.ProtocolVersion);
+        Assert.False(options.ExcludeEmptyArrays);
         Assert.Equal(ToonKeyFolding.Off, options.KeyFolding);
-        Assert.Equal(ToonObjectArrayLayout.Columnar, options.ObjectArrayLayout);
+        Assert.Equal(ToonObjectArrayLayout.Auto, options.ObjectArrayLayout);
         Assert.Equal(ToonByteArrayFormat.Base64String, options.ByteArrayFormat);
     }
 

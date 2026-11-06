@@ -1,8 +1,10 @@
 using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
 using DevOp.Toon;
+using DevOp.Toon.Core;
 
 namespace DevOp.Toon.API;
 
@@ -11,6 +13,8 @@ namespace DevOp.Toon.API;
 /// </summary>
 public sealed class ToonInputFormatter : TextInputFormatter
 {
+    private static readonly Encoding StrictUtf8 = new UTF8Encoding(false, true);
+    private static readonly Encoding ReplacingUtf8 = new UTF8Encoding(false, false);
     private static readonly MethodInfo DecodeGenericMethod = typeof(ToonDecoder)
         .GetMethods()
         .Single(method =>
@@ -48,12 +52,35 @@ public sealed class ToonInputFormatter : TextInputFormatter
         InputFormatterContext context,
         Encoding encoding)
     {
-        using var reader = new StreamReader(context.HttpContext.Request.Body, encoding);
-        var text = await reader.ReadToEndAsync();
-
         try
         {
-            var decodeOptions = ResolveDecodeOptions(context.HttpContext.RequestServices, text);
+            var decodeOptions = (context.HttpContext.RequestServices.GetService<ToonServiceOptions>()?.Decode ?? ToonDecoder.DefaultOptions).Clone();
+            if (context.HttpContext.Request.Headers.TryGetValue("X-Toon-Version", out var versions))
+            {
+                if (versions.Count != 1 || versions[0]!.Contains(','))
+                {
+                    context.HttpContext.Response.StatusCode = 400;
+                    throw new ArgumentException("Specify exactly one body protocol version.");
+                }
+                if (!ToonProtocolVersions.TryParse(versions[0], out var version))
+                {
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(versions[0] ?? "", @"^(?:[0-9]+\.[0-9]+|custom-[a-z0-9.-]+)$")) throw new ArgumentException("Malformed TOON body protocol version.");
+                    context.ModelState.TryAddModelError(context.ModelName, new UnsupportedContentTypeException("Unsupported TOON body protocol version."), context.Metadata);
+                    context.HttpContext.Response.StatusCode = 415;
+                    return await InputFormatterResult.FailureAsync();
+                }
+                if (decodeOptions.ProtocolVersion != ToonProtocolVersion.Auto && decodeOptions.ProtocolVersion != version)
+                {
+                    context.HttpContext.Response.StatusCode = 400;
+                    throw new ArgumentException("Body protocol version conflicts with configured decoder.");
+                }
+                decodeOptions.ProtocolVersion = version;
+            }
+            var replaceInvalid = decodeOptions.ProtocolVersion is ToonProtocolVersion.CustomLegacy or ToonProtocolVersion.V3_0
+                || !decodeOptions.Strict && decodeOptions.ProtocolVersion is ToonProtocolVersion.V4_2 or ToonProtocolVersion.V4_3;
+            using var reader = new StreamReader(context.HttpContext.Request.Body, replaceInvalid ? ReplacingUtf8 : StrictUtf8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
+            var text = await reader.ReadToEndAsync();
+            decodeOptions = ToonDecoder.DetectOptions(text, decodeOptions);
             var modelType = context.ModelType;
             object? result;
 
@@ -75,6 +102,7 @@ public sealed class ToonInputFormatter : TextInputFormatter
         }
         catch (Exception ex)
         {
+            if (context.HttpContext.Response.StatusCode == 200) context.HttpContext.Response.StatusCode = 400;
             context.ModelState.TryAddModelError(context.ModelName, ex, context.Metadata);
             return await InputFormatterResult.FailureAsync();
         }

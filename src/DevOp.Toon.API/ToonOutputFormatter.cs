@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using System.Text;
 using DevOp.Toon;
+using DevOp.Toon.Core;
 
 namespace DevOp.Toon.API;
 
@@ -79,7 +80,15 @@ public sealed class ToonOutputFormatter : TextOutputFormatter
         OutputFormatterWriteContext context,
         Encoding selectedEncoding)
     {
-        var encodeOptions = ResolveEncodeOptions(context.HttpContext);
+        ToonEncodeOptions encodeOptions;
+        try { encodeOptions = ResolveEncodeOptions(context.HttpContext); }
+        catch (ArgumentException ex)
+        {
+            context.HttpContext.Response.StatusCode = ex is NotSupportedVersionException ? 406 : 400;
+            await context.HttpContext.Response.WriteAsJsonAsync(new { title = "Invalid TOON version options", detail = ex.Message }, context.HttpContext.RequestAborted);
+            return;
+        }
+        context.HttpContext.Response.Headers["X-Toon-Version"] = ToonProtocolVersions.Format(encodeOptions.ProtocolVersion);
         await ToonEncoder.EncodeToStreamAsync(
             context.Object!,
             context.HttpContext.Response.Body,
@@ -95,33 +104,76 @@ public sealed class ToonOutputFormatter : TextOutputFormatter
            (mediaType.StartsWith(MediaTypeText, StringComparison.OrdinalIgnoreCase) ||
             mediaType.StartsWith(MediaTypeApplication, StringComparison.OrdinalIgnoreCase));
 
-    private static ToonEncodeOptions ResolveEncodeOptions(HttpContext httpContext)
+    internal static ToonEncodeOptions ResolveEncodeOptions(HttpContext httpContext)
     {
+        if (httpContext.Features.Get<EncodeOptionsSnapshot>() is { } snapshot && snapshot.Matches(httpContext.Request.Headers)) return snapshot.Options;
         var serviceOptions = httpContext.RequestServices.GetService<ToonServiceOptions>();
         var encodeOptions = CloneEncodeOptions(serviceOptions?.Encode ?? ToonEncoder.DefaultOptions);
 
         ApplyRequestOptionOverrides(encodeOptions, httpContext.Request.Headers);
 
+        encodeOptions.Validate();
         return encodeOptions;
     }
 
-    private static ToonEncodeOptions CloneEncodeOptions(ToonEncodeOptions options)
+    internal static void PrepareEncodeOptions(HttpContext httpContext)
     {
-        return new ToonEncodeOptions
+        var options = ResolveEncodeOptions(httpContext);
+        httpContext.Features.Set(new EncodeOptionsSnapshot(options, httpContext.Request.Headers));
+    }
+
+    private sealed class EncodeOptionsSnapshot
+    {
+        private readonly KeyValuePair<string, StringValues>[] overrides;
+        internal ToonEncodeOptions Options { get; }
+
+        internal EncodeOptionsSnapshot(ToonEncodeOptions options, IHeaderDictionary headers)
         {
-            Indent = options.Indent,
-            Delimiter = options.Delimiter,
-            KeyFolding = options.KeyFolding,
-            FlattenDepth = options.FlattenDepth,
-            ObjectArrayLayout = options.ObjectArrayLayout,
-            ByteArrayFormat = options.ByteArrayFormat,
-            IgnoreNullOrEmpty = options.IgnoreNullOrEmpty,
-            ExcludeEmptyArrays = options.ExcludeEmptyArrays
-        };
+            Options = options;
+            var count = 0;
+            foreach (var header in headers)
+                if (header.Key.StartsWith(OptionHeaderPrefix, StringComparison.OrdinalIgnoreCase)) count++;
+            overrides = new KeyValuePair<string, StringValues>[count];
+            var index = 0;
+            foreach (var header in headers)
+            {
+                if (!header.Key.StartsWith(OptionHeaderPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+                var values = header.Value.Count > 1 ? new StringValues((string?[])header.Value.ToArray().Clone()) : new StringValues(header.Value.Count == 0 ? null : header.Value[0]);
+                overrides[index++] = new KeyValuePair<string, StringValues>(header.Key, values);
+            }
+        }
+
+        internal bool Matches(IHeaderDictionary headers)
+        {
+            var count = 0;
+            foreach (var header in headers)
+                if (header.Key.StartsWith(OptionHeaderPrefix, StringComparison.OrdinalIgnoreCase)) count++;
+            if (count != overrides.Length) return false;
+            foreach (var header in overrides)
+                if (!headers.TryGetValue(header.Key, out var current) || !StringValues.Equals(header.Value, current)) return false;
+            return true;
+        }
+    }
+
+    private static ToonEncodeOptions CloneEncodeOptions(ToonEncodeOptions options) => options.Clone();
+
+    internal sealed class NotSupportedVersionException : ArgumentException
+    {
+        internal NotSupportedVersionException(string message) : base(message) { }
     }
 
     private static void ApplyRequestOptionOverrides(ToonEncodeOptions encodeOptions, IHeaderDictionary headers)
     {
+        if (headers.TryGetValue("X-Toon-Option-ProtocolVersion", out var versions))
+        {
+            if (versions.Count != 1 || versions[0]!.Contains(',')) throw new ArgumentException("Specify exactly one response protocol version.");
+            if (!ToonProtocolVersions.TryParse(versions[0], out var version))
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(versions[0] ?? "", @"^(?:[0-9]+\.[0-9]+|custom-[a-z0-9.-]+)$")) throw new ArgumentException("Malformed response protocol version.");
+                throw new NotSupportedVersionException("Unsupported response protocol version.");
+            }
+            encodeOptions.ProtocolVersion = version;
+        }
         foreach (var header in headers)
         {
             if (!header.Key.StartsWith(OptionHeaderPrefix, StringComparison.OrdinalIgnoreCase))
@@ -130,6 +182,14 @@ public sealed class ToonOutputFormatter : TextOutputFormatter
             }
 
             var optionName = header.Key[OptionHeaderPrefix.Length..];
+            if (optionName.Equals("ProtocolVersion", StringComparison.OrdinalIgnoreCase)) continue;
+            if (optionName.Equals(nameof(ToonEncodeOptions.Indent), StringComparison.OrdinalIgnoreCase))
+            {
+                if (header.Value.Count != 1 || !int.TryParse(header.Value[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var indent) || indent is < 1 or > 16)
+                    throw new ArgumentException("Response indentation must be one integer between 1 and 16 spaces.");
+                encodeOptions.Indent = indent;
+                continue;
+            }
             if (string.IsNullOrWhiteSpace(optionName) ||
                 !EncodeOptionProperties.TryGetValue(optionName, out var property) ||
                 !TryConvertHeaderValue(header.Value, property.PropertyType, out var convertedValue))
